@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisateur de Tri</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col items-center p-8">
+    <h1 class="text-2xl font-bold mb-4">Visualisateur d'Algorithmes de Tri</h1>
+    
+    <div class="flex gap-4 mb-4">
+        <select id="algorithm" class="p-2 border rounded">
+            <option value="selection">Tri par sélection</option>
+            <option value="bubble">Tri à bulles</option>
+            <option value="quick">Tri rapide</option>
+            <option value="merge">Tri par fusion</option>
+        </select>
+
+        <select id="order" class="p-2 border rounded">
+            <option value="asc">Croissant</option>
+            <option value="desc">Décroissant</option>
+        </select>
+
+        <input id="size" type="number" class="p-2 border rounded w-24" value="25" min="5" max="50">
+        <button id="generate" class="bg-black text-white p-2 rounded">Nouveau Tableau</button>
+        <button id="startSort" class="bg-green-500 text-white p-2 rounded">Démarrer le Tri</button>
+    </div>
+
+    <div id="arrayContainer" class="h-96 flex items-end justify-center gap-1 mt-4"></div>
+
+    <script>
+        let array = [];
+        const arrayContainer = document.getElementById("arrayContainer");
+        const sizeInput = document.getElementById("size");
+        const algorithmSelect = document.getElementById("algorithm");
+        const orderSelect = document.getElementById("order");
+        const generateButton = document.getElementById("generate");
+        const startButton = document.getElementById("startSort");
+
+        function generateArray() {
+            const size = parseInt(sizeInput.value);
+            array = Array.from({ length: size }, () => Math.floor(Math.random() * 100) + 1);
+            renderArray();
+        }
+
+        function renderArray(highlight = []) {
+            arrayContainer.innerHTML = "";
+            array.forEach((value, index) => {
+                const bar = document.createElement("div");
+                bar.style.height = `${value}%`;
+                bar.className = `w-8 bg-blue-500 transition-all duration-100 ${highlight.includes(index) ? 'bg-red-500' : ''}`;
+                arrayContainer.appendChild(bar);
+            });
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function quickSort(arr, left = 0, right = arr.length - 1) {
+            if (left < right) {
+                let pivotIndex = await partition(arr, left, right);
+                await quickSort(arr, left, pivotIndex - 1);
+                await quickSort(arr, pivotIndex + 1, right);
+            }
+        }
+
+        async function partition(arr, left, right) {
+            let pivot = arr[right];
+            let i = left;
+            for (let j = left; j < right; j++) {
+                renderArray([j, right]);
+                await sleep(100);
+                if ((orderSelect.value === 'asc' && arr[j] < pivot) || (orderSelect.value === 'desc' && arr[j] > pivot)) {
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                    i++;
+                    renderArray();
+                }
+            }
+            [arr[i], arr[right]] = [arr[right], arr[i]];
+            renderArray();
+            return i;
+        }
+
+        async function mergeSort(arr, left = 0, right = arr.length - 1) {
+            if (left >= right) return;
+            let mid = Math.floor((left + right) / 2);
+            await mergeSort(arr, left, mid);
+            await mergeSort(arr, mid + 1, right);
+            await merge(arr, left, mid, right);
+        }
+
+        async function merge(arr, left, mid, right) {
+            let temp = arr.slice(left, right + 1);
+            let i = 0, j = mid - left + 1, k = left;
+            while (i <= mid - left && j <= right - left) {
+                renderArray([k]);
+                await sleep(100);
+                if ((orderSelect.value === 'asc' && temp[i] < temp[j]) || (orderSelect.value === 'desc' && temp[i] > temp[j])) {
+                    arr[k++] = temp[i++];
+                } else {
+                    arr[k++] = temp[j++];
+                }
+                renderArray();
+            }
+            while (i <= mid - left) arr[k++] = temp[i++];
+            while (j <= right - left) arr[k++] = temp[j++];
+        }
+        async function selectionSort() {
+            let n = array.length;
+            for (let i = 0; i < n; i++) {
+                let minIdx = i;
+                for (let j = i + 1; j < n; j++) {
+                    renderArray([i, j]);
+                    await sleep(100);
+                    if ((orderSelect.value === 'asc' && array[j] < array[minIdx]) ||
+                        (orderSelect.value === 'desc' && array[j] > array[minIdx])) {
+                        minIdx = j;
+                    }
+                }
+                [array[i], array[minIdx]] = [array[minIdx], array[i]];
+                renderArray();
+            }
+        }
+        async function bubbleSort() {
+            let n = array.length;
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n - i - 1; j++) {
+                    renderArray([j, j + 1]);
+                    await sleep(100);
+                    if ((orderSelect.value === 'asc' && array[j] > array[j + 1]) ||
+                        (orderSelect.value === 'desc' && array[j] < array[j + 1])) {
+                        [array[j], array[j + 1]] = [array[j + 1], array[j]];
+                        renderArray();
+                    }
+                }
+            }
+        }
+
+        startButton.addEventListener("click", async () => {
+            if (algorithmSelect.value === "selection") await selectionSort();
+            else if (algorithmSelect.value === "bubble") await bubbleSort();
+            else if (algorithmSelect.value === "quick") await quickSort(array);
+            else if (algorithmSelect.value === "merge") await mergeSort(array);
+        });
+
+        generateButton.addEventListener("click", generateArray);
+        generateArray();
+    </script>
+</body>
+</html>
